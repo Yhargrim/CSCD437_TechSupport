@@ -2,6 +2,6 @@
 Ron Robinson - Katherine Bozin
 
 # TO-DO:
-- C version
 - Encrypt password
 - File IO
+- Update Java version to match changes in C code
