@@ -12,7 +12,7 @@
  * 
 */
 
-import java.io.File;
+import java.io.*;
 import java.util.Scanner;
 
 public class CSCD437Lab6Main {
@@ -30,12 +30,17 @@ public class CSCD437Lab6Main {
 		System.out.println("Multiply: " + (numbers[0] * numbers[1]));
 		System.out.println();
 		
-		String infname = inFile(kb);
-		System.out.println("Input File Name: " + infname);
+		File infile = openFile("input", kb);
+		Scanner fin = new Scanner(infile);
+		while (fin.hasNextLine())
+			System.out.println(fin.nextLine());
+		fin.close();
 		System.out.println();
 		
-		String outfname = outFile(kb);
-		System.out.println("Output File Name: " + outfname);
+		File outfile = openFile("output", kb);
+		BufferedWriter fout = new BufferedWriter(new FileWriter(outfile));
+		fout.write("Successful file output.");
+		fout.close();
 		System.out.println();
 		
 		String password = password(kb);
@@ -85,30 +90,23 @@ public class CSCD437Lab6Main {
 		return hold;
 	}
 	
-	private static String inFile(final Scanner kb) {
-		System.out.print("Enter input file name: ");
+	private static File openFile(final String mode, final Scanner kb) {
+		System.out.print("Enter " + mode + " file name: ");
 		String fname = "";
 		while (true) {
 			if (kb.hasNext())
 				fname = kb.nextLine();
 			File file = new File(fname);
-			if (file.exists())
-				if (file.canRead())
-					return fname;
-			System.out.print("Invalid - Try Again: ");
-		}
-	}
-	
-	private static String outFile(final Scanner kb) {
-		System.out.print("Enter output file name: ");
-		String fname = "";
-		while (true) {
-			if (kb.hasNext())
-				fname = kb.nextLine();
-			File file = new File(fname);
-			if (file.exists())
-				if (file.canWrite())
-					return fname;
+			if (file.exists()) {
+				if (mode.equals("input")) {
+					if (file.canRead())
+						return file;
+				}
+				if (mode.equals("output")) {
+					if (file.canWrite())
+						return file;
+				}
+			}
 			System.out.print("Invalid - Try Again: ");
 		}
 	}
