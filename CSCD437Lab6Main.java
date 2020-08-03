@@ -61,7 +61,6 @@ public class CSCD437Lab6Main {
 		Pattern pattern = Pattern.compile(namePattern);
 		Matcher match = pattern.matcher(name);
 		if(match.matches()) {
-			//System.out.println("Value entered for "+which+" name: "+name+"."); //for debugging
 			if(which.equals("first")) {
 				mFirst=name;
 				mFirstNameCorrect=true;
@@ -71,7 +70,6 @@ public class CSCD437Lab6Main {
 				mLastNameCorrect=true;
 			}
 		} else {
-			//System.out.println("Error when reading "+which+" name. Entered bad value '"+name+"'."); //for debugging
 			mErrors.add("Error when reading "+which+" name. Entered bad value '"+name+"'.");
 		}
 	}
@@ -88,7 +86,6 @@ public class CSCD437Lab6Main {
 			BigInteger bigInt=new BigInteger(number);
 			if(bigInt.compareTo(BigInteger.valueOf(Integer.MIN_VALUE)) >= 0 &&
 					bigInt.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) <= 0) {
-				//System.out.println("Value entered for "+which+" integer: "+number+"."); //for debugging
 				if(which.equals("first")) {
 					mNum1=number;
 					mNum1Correct=true;
@@ -98,11 +95,9 @@ public class CSCD437Lab6Main {
 					mNum2Correct=true;
 				}
 			} else {
-				//System.out.println("Error when reading "+which+" number. Entered bad value '"+number+"'."); //for debugging
 				mErrors.add("Error when reading "+which+" number. Entered bad value '"+number+"'.");
 			}
 		} else {
-			//System.out.println("Error when reading "+which+" number. Entered bad value '"+number+"'."); //for debugging
 			mErrors.add("Error when reading "+which+" number. Entered bad value '"+number+"'.");
 		}
 
@@ -132,7 +127,6 @@ public class CSCD437Lab6Main {
 	}
 
 	private static void fileError(String mode, String fileName) {
-		//System.out.println("Error when reading "+mode+" file. Entered bad value '"+fileName+"'."); //for debugging
 		mErrors.add("Error when reading "+mode+" file. Entered bad value '"+fileName+"'.");
 	}
 	
@@ -149,7 +143,6 @@ public class CSCD437Lab6Main {
 			hashPassword(password);
 		}
 		else {
-			//System.out.println("Error when reading password. Entered bad value '"+password+"'."); //for debugging
 			mErrors.add("Error when reading password. Entered bad value '"+password+"'.");
 		}
 	}
@@ -181,7 +174,7 @@ public class CSCD437Lab6Main {
 		File file=new File(fileName);
 		String fname=fileName;
 		while(file.exists()) {
-			fname="0".concat(fileName);
+			fname="0".concat(fname);
 			file=new File(fname);
 		}
 		if(fileName.equals("password.txt")) mPasswordFile=fname;
@@ -255,7 +248,7 @@ public class CSCD437Lab6Main {
 		mErrors.add("Error when rereading password. Entered bad value '"+password+"'. Password does not match original password.");
 	}
 
-	private static void writeToOutput() { //might want to break this method into parts
+	private static void writeToOutput() {
 		if(mOutFileCorrect) {
 			BufferedWriter fout = null;
 			try { fout = new BufferedWriter(new FileWriter(mOutput)); }
@@ -274,7 +267,6 @@ public class CSCD437Lab6Main {
 				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 			}
 			if(!(mFirstNameCorrect&&mLastNameCorrect)) {
-				//System.out.println("Bad value for both names. Unable to write names to output file.");
 				mErrors.add("Could not write name to output file; valid names not given.");
 			}
 
@@ -284,7 +276,6 @@ public class CSCD437Lab6Main {
 				try { fout.write(mNum1+"+"+mNum2+"="+bigIntOne.add(bigIntTwo)+"\n"+mNum1+"*"+mNum2+"="+bigIntOne.multiply(bigIntTwo)+"\n"); }
 				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 			} else {
-				//System.out.println("Bad value for one or both integers. Unable to write result of integer addition/multiplication to output file.");
 				mErrors.add("Could not write integer addition/multiplication to output file; one or both integers not valid.");
 				try { fout.write("\n"); }
 				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
@@ -311,36 +302,12 @@ public class CSCD437Lab6Main {
 				try { in.close(); }
 				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 			} else {
-				//System.out.println("Bad filename for input file. Unable to write input file contents to output file.");
 				mErrors.add("Could not write input file contents to output file; valid filename not given.");
 			}
 			try { fout.close(); }
 			catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 		} else {
-			//System.out.println("Bad filename for output file. Unable to write to file.");
 			mErrors.add("Could not write to output file; valid filename not given.");
 		}
 	}
-
 }
-
-/*
-Shortcomings:
--had to set length restrictions on some inputs (like password and filename) that may rule out some valid input
--used System.in to read inputs, which utilizes File Input Stream that has associated vulnerabilities
-
-Protections:
--all variables and non-main methods private
--first or last name longer than 50 characters or shorter than 1 character, containing anything other than characters in set [a-z,.'-]
--integers longer than 11 characters (allowing for negative sign) or shorter than one character, containing anything other than digits.
-Also checks that entered integer is not greater than max integer value or less than min integer value.
--doesn't write bad data to output file, rather writes that data was bad
--files names that contain invalid characters and don't follow the format of name.extension. limits size of both.
-checks that file exists and can be read from in the case of the input file, and written to in the case of the output file.
--sequence '\0' in password, and passwords of length 0
--add salt to password for extra security layer, used secure random for cryptographically strong rng
--salts and hashes second password to compare it to the hash of the first, which we retrieve from the file
--compare passwords a character at a time, so the comparison fails as soon as the passwords start to differ (to protect against malicious second password)
--checks that password and error files don't already exist before creating them
--use big int to store result of integer addition and multiplication to ensure it is large enough to contain it
- */
