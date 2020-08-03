@@ -2,14 +2,6 @@
  * Ron Robinson III - Katherine Bozin
  * Tech Support
  * CSCD437-U20
- * 
- * TO-DO:
- * Ensure integer overflow causes no issues - 2,147,483,647(8)
- * Encrypt the password via hash/salt (possibly verify after?)
- * Read-in from input file
- * Write everything to output file
- * 
- * 
 */
 
 import java.io.*;
@@ -25,16 +17,17 @@ import java.util.regex.Pattern;
 
 public class CSCD437Lab6Main {
 
-	private static ArrayList<String> mErrors, mCorrect;
-	private static boolean mNameCorrect, mNumberCorrect, mInFileCorrect, mOutFileCorrect, mPasswordCorrect;
+	private static ArrayList<String> mErrors;
+	private static boolean mFirstNameCorrect, mLastNameCorrect, mNum1Correct, mNum2Correct, mInFileCorrect, mOutFileCorrect, mPasswordCorrect;
 	private static File mInput, mOutput;
-	private static String mFirst, mLast, mNum1, mNum2, mPassword;
+	private static String mFirst, mLast, mNum1, mNum2, mPasswordFile;
 	
 	public static void main(String[] args) {
 		mErrors=new ArrayList<>();
-		mCorrect=new ArrayList<>();
-		mNameCorrect=false;
-		mNumberCorrect=false;
+		mFirstNameCorrect=false;
+		mLastNameCorrect=false;
+		mNum1Correct=false;
+		mNum2Correct=false;
 		mInFileCorrect=false;
 		mOutFileCorrect=false;
 		mPasswordCorrect=false;
@@ -55,6 +48,7 @@ public class CSCD437Lab6Main {
 		reenterPassword(in);
 
 		writeToOutput();
+		writeToFile("errors-java.txt", null, null);
 		
 		in.close();
 	}
@@ -63,23 +57,27 @@ public class CSCD437Lab6Main {
 		System.out.print("Enter "+which+" name: ");
 		String name=in.nextLine();
 
-		String namePattern = "^[a-z,.'-]{1,50}$";
+		String namePattern = "^[A-Za-z,.'-]{1,50}$";
 		Pattern pattern = Pattern.compile(namePattern);
 		Matcher match = pattern.matcher(name);
 		if(match.matches()) {
-			System.out.println("Value entered for "+which+" name: "+name+"."); //for debugging
-			mCorrect.add("Value entered for "+which+" name: "+name+".");
-			mNameCorrect=true;
-			if(which.equals("first")) mFirst=name;
-			else mLast=name;
+			//System.out.println("Value entered for "+which+" name: "+name+"."); //for debugging
+			if(which.equals("first")) {
+				mFirst=name;
+				mFirstNameCorrect=true;
+			}
+			else {
+				mLast=name;
+				mLastNameCorrect=true;
+			}
 		} else {
-			System.out.println("Error when reading "+which+" name. Entered bad value '"+name+"'."); //for debugging
+			//System.out.println("Error when reading "+which+" name. Entered bad value '"+name+"'."); //for debugging
 			mErrors.add("Error when reading "+which+" name. Entered bad value '"+name+"'.");
 		}
 	}
 	
 	private static void number(final String which, final Scanner in) {
-		System.out.print("Enter "+which+" integer:");
+		System.out.print("Enter "+which+" integer: ");
 		String number=in.nextLine();
 
 		String numberPattern = "^(-?\\d+){1,11}$";
@@ -90,14 +88,21 @@ public class CSCD437Lab6Main {
 			BigInteger bigInt=new BigInteger(number);
 			if(bigInt.compareTo(BigInteger.valueOf(Integer.MIN_VALUE)) >= 0 &&
 					bigInt.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) <= 0) {
-				System.out.println("Value entered for "+which+" integer: "+number+"."); //for debugging
-				mCorrect.add("Value entered for "+which+" integer: "+number+".");
-				mNumberCorrect=true;
-				if(which.equals("first")) mNum1=number;
-				else mNum2=number;
+				//System.out.println("Value entered for "+which+" integer: "+number+"."); //for debugging
+				if(which.equals("first")) {
+					mNum1=number;
+					mNum1Correct=true;
+				}
+				else {
+					mNum2=number;
+					mNum2Correct=true;
+				}
+			} else {
+				//System.out.println("Error when reading "+which+" number. Entered bad value '"+number+"'."); //for debugging
+				mErrors.add("Error when reading "+which+" number. Entered bad value '"+number+"'.");
 			}
 		} else {
-			System.out.println("Error when reading "+which+" number. Entered bad value '"+number+"'."); //for debugging
+			//System.out.println("Error when reading "+which+" number. Entered bad value '"+number+"'."); //for debugging
 			mErrors.add("Error when reading "+which+" number. Entered bad value '"+number+"'.");
 		}
 
@@ -107,7 +112,7 @@ public class CSCD437Lab6Main {
 		System.out.print("Enter "+mode+" file name: ");
 		String fileName = in.nextLine();
 
-		String filePattern = "^([\\w,-. ]+){1,200}\\.([A-Za-z]){1,20}$";
+		String filePattern = "^[\\w,-. ]{1,200}\\.([A-Za-z]){1,20}$";
 		Pattern pattern = Pattern.compile(filePattern);
 		Matcher match = pattern.matcher(fileName);
 
@@ -117,8 +122,8 @@ public class CSCD437Lab6Main {
 				if (mode.equals("input") && file.canRead()) {
 					mInput=file;
 					mInFileCorrect=true;
-				} else fileError(mode, fileName);
-				if (mode.equals("output") && file.canWrite()) {
+				}
+				else if (mode.equals("output") && file.canWrite()) {
 					mOutput=file;
 					mOutFileCorrect=true;
 				} else fileError(mode, fileName);
@@ -127,7 +132,7 @@ public class CSCD437Lab6Main {
 	}
 
 	private static void fileError(String mode, String fileName) {
-		System.out.println("Error when reading "+mode+" file. Entered bad value '"+fileName+"'."); //for debugging
+		//System.out.println("Error when reading "+mode+" file. Entered bad value '"+fileName+"'."); //for debugging
 		mErrors.add("Error when reading "+mode+" file. Entered bad value '"+fileName+"'.");
 	}
 	
@@ -144,79 +149,105 @@ public class CSCD437Lab6Main {
 			hashPassword(password);
 		}
 		else {
-			System.out.println("Error when reading password. Entered bad value '"+password+"'."); //for debugging
+			//System.out.println("Error when reading password. Entered bad value '"+password+"'."); //for debugging
 			mErrors.add("Error when reading password. Entered bad value '"+password+"'.");
 		}
 	}
 
 	private static void hashPassword(String password) {
+		String hash;
+		SecureRandom random = new SecureRandom();
+		byte[] salt = new byte[16];
+		random.nextBytes(salt);
+		hash=Arrays.toString(salt);
+		hash=hash(hash, password);
+
+		writeToFile("password.txt", hash, salt);
+	}
+
+	private static String hash(String hash, String password) {
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA-512");
 			byte[] messageDigest = md.digest(password.getBytes());
 			BigInteger bigInt = new BigInteger(1, messageDigest);
-			String hash = bigInt.toString(16);
+			hash = hash+bigInt.toString(16);
 			while (hash.length()<32) hash = "0".concat(hash);
+		} catch (NoSuchAlgorithmException e) { mErrors.add("NoSuchAlgorithmException in method 'hash'. "+e.getMessage()); }
 
-			SecureRandom random = new SecureRandom();
-			byte[] salt = new byte[16];
-			random.nextBytes(salt);
-			hash= Arrays.toString(salt)+":"+hash;
-
-			System.out.println(hash);//remove later
-			storePassword(hash, salt);
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace(); //should remove all stack traces for final product
-			//should add fallback method if this encryption doesn't work
-		}
+		return hash;
 	}
 
-	private static void storePassword(String hash, byte[] salt) {
-		String fileName="password.txt";
+	private static void writeToFile(String fileName, String hash, byte[] salt) {
 		File file=new File(fileName);
+		String fname=fileName;
 		while(file.exists()) {
-			fileName="0".concat(fileName);
-			file=new File(fileName);
+			fname="0".concat(fileName);
+			file=new File(fname);
 		}
+		if(fileName.equals("password.txt")) mPasswordFile=fname;
 		try { file.createNewFile(); }
-		catch (IOException e) {
-			System.out.println("Failed to create new file.");
-			e.printStackTrace();
-		}
+		catch (IOException e) { mErrors.add("IOException in method 'writeToFile'. "+e.getMessage()); }
 
 		BufferedWriter fout = null;
 		try { fout = new BufferedWriter(new FileWriter(file)); }
-		catch (IOException e) {
-			System.out.println("Failed to open buffered writer to write to file.");
-			e.printStackTrace();
-		}
+		catch (IOException e) { mErrors.add("IOException in method 'writeToFile'. "+e.getMessage()); }
+
 		assert fout != null;
-		try { fout.write(hash+"\n" + Arrays.toString(salt)); }
-		catch (IOException e) {
-			System.out.println("Failed to write to file.");
-			e.printStackTrace();
-		}
+		if(fileName.equals("errors-java.txt")) writeError(fout);
+		else writePassword(fout, hash);
 		try { fout.close(); }
-		catch (IOException e) {
-			System.out.println("Failed to close buffered writer.");
-			e.printStackTrace();
-		}
+		catch (IOException e) { mErrors.add("IOException in method 'writeToFile'. "+e.getMessage()); }
+	}
+
+	private static void writePassword(BufferedWriter fout, String hash) {
+		try { fout.write(hash); }
+		catch (IOException e) { mErrors.add("IOException in method 'writePassword'. "+e.getMessage()); }
+	}
+
+	private static void writeError(BufferedWriter fout) {
+		try {
+			for (String mError : mErrors) fout.write(mError + "\n");
+			if (mErrors.isEmpty()) fout.write("No errors.");
+		} catch (IOException e) { mErrors.add("IOException in method 'writeError'. "+e.getMessage()); }
 	}
 
 	private static void reenterPassword(Scanner in) {
-		System.out.print("Re-enter password: ");
-		String password=in.nextLine();
-		boolean same=true;
-		int i=password.length(), cur=0;
-		if(i!=mPassword.length()) passwordError(password);
+		if(mPasswordCorrect) {
+			System.out.print("Re-enter password: ");
+			String password=in.nextLine();
+			String hash="", firstPass="", salt="";
 
-		while(cur<i) {
-			same=mPassword.charAt(cur)==password.charAt(cur);
-			cur++;
-			if(!same) break;
+			FileInputStream fis = null;
+			try { fis = new FileInputStream(mPasswordFile); }
+			catch (FileNotFoundException e) { mErrors.add("FileNotFoundException in method 'reenterPassword'. "+e.getMessage()); }
+
+			assert fis!=null;
+			BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+			try {
+				firstPass=br.readLine();
+				salt=firstPass.split("\\]")[0]+"]";
+				hash=hash(salt, password);
+			} catch (IOException e) { mErrors.add("IOException in method 'reenterPassword'. "+e.getMessage()); }
+
+			try { br.close(); }
+			catch (IOException e) { mErrors.add("IOException in method 'reenterPassword'. "+e.getMessage()); }
+
+			boolean same=true;
+			int i=hash.length(), cur=0;
+			if(i!=firstPass.length()) passwordError(password);
+			else {
+				while(cur<i) {
+					same=firstPass.charAt(cur)==hash.charAt(cur);
+					cur++;
+					if(!same) break;
+				}
+
+				if(same) System.out.println("Passwords are equivalent.");
+				else passwordError(password);
+			}
 		}
+		else System.out.println("Previous password not formatted correctly, can't re-enter password.");
 
-		if(same) System.out.println("Passwords are equivalent.");
-		else passwordError(password);
 	}
 
 	private static void passwordError(String password) {
@@ -228,76 +259,65 @@ public class CSCD437Lab6Main {
 		if(mOutFileCorrect) {
 			BufferedWriter fout = null;
 			try { fout = new BufferedWriter(new FileWriter(mOutput)); }
-			catch (IOException e) {
-				System.out.println("Failed to open buffered writer to write to output file.");
-				e.printStackTrace();
-			}
+			catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 			assert fout!=null;
 
-			if(mNameCorrect) {
-				try { fout.write(mFirst+" "+mLast+"\n"); }
-				catch (IOException e) {
-					System.out.println("Failed to write name to file.");
-					e.printStackTrace();
+			if(mFirstNameCorrect) {
+				try {
+					fout.write(mFirst+" ");
+					if(!mLastNameCorrect) fout.write("\n");
 				}
-			} else {
-				System.out.println("Bad value for name. Unable to write name to output file.");
-				mErrors.add("Could not write name to output file; valid filename not given.");
+				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
+			}
+			if(mLastNameCorrect) {
+				try { fout.write(mLast+"\n"); }
+				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
+			}
+			if(!(mFirstNameCorrect&&mLastNameCorrect)) {
+				//System.out.println("Bad value for both names. Unable to write names to output file.");
+				mErrors.add("Could not write name to output file; valid names not given.");
 			}
 
-			if(mNumberCorrect) {
+			if(mNum1Correct&&mNum2Correct) {
 				BigInteger bigIntOne=new BigInteger(mNum1);
 				BigInteger bigIntTwo=new BigInteger(mNum2);
 				try { fout.write(mNum1+"+"+mNum2+"="+bigIntOne.add(bigIntTwo)+"\n"+mNum1+"*"+mNum2+"="+bigIntOne.multiply(bigIntTwo)+"\n"); }
-				catch (IOException e) {
-					System.out.println("Failed to write name to file.");
-					e.printStackTrace();
-				}
+				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 			} else {
-				System.out.println("Bad value for one or both integers. Unable to write result of integer addition/multiplication to output file.");
+				//System.out.println("Bad value for one or both integers. Unable to write result of integer addition/multiplication to output file.");
 				mErrors.add("Could not write integer addition/multiplication to output file; one or both integers not valid.");
+				try { fout.write("\n"); }
+				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 			}
 
 			if(mInFileCorrect) {
+				try { fout.write("Input file contents:\n"); }
+				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 				FileInputStream fis = null;
-				try { fis = new FileInputStream(mInput);
-				} catch (FileNotFoundException e) {
-					System.out.println("Failed to open file input stream to read from input file.");
-					e.printStackTrace();
-				}
+				try { fis = new FileInputStream(mInput); }
+				catch (FileNotFoundException e) { mErrors.add("FileNotFoundException in method 'writeToOutput'. "+e.getMessage()); }
+
 				assert fis!=null;
 				BufferedReader in = new BufferedReader(new InputStreamReader(fis));
-
 				String line = null;
 				while (true) {
 					try { if ((line = in.readLine()) == null) break; }
-					catch (IOException e) {
-						e.printStackTrace();
-						System.out.println("Failed to read line from input file.");
-					}
+					catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 					try { fout.write(line+"\n"); }
-					catch (IOException e) {
-						System.out.println("Failed to write input file contents to output file.");
-						e.printStackTrace();
-					}
+					catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 				}
+				try { fis.close(); }
+				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 				try { in.close(); }
-				catch (IOException e) {
-					System.out.println("Failed to close file input stream.");
-					e.printStackTrace();
-				}
-			}
-			else {
-				System.out.println("Bad filename for input file. Unable to write input file contents to output file.");
+				catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
+			} else {
+				//System.out.println("Bad filename for input file. Unable to write input file contents to output file.");
 				mErrors.add("Could not write input file contents to output file; valid filename not given.");
 			}
 			try { fout.close(); }
-			catch (IOException e) {
-				System.out.println("Failed to close buffered writer.");
-				e.printStackTrace();
-			}
+			catch (IOException e) { mErrors.add("IOException in method 'writeToOutput'. "+e.getMessage()); }
 		} else {
-			System.out.println("Bad filename for output file. Unable to write to file.");
+			//System.out.println("Bad filename for output file. Unable to write to file.");
 			mErrors.add("Could not write to output file; valid filename not given.");
 		}
 	}
@@ -306,8 +326,8 @@ public class CSCD437Lab6Main {
 
 /*
 Shortcomings:
-- had to set length restrictions on some inputs (like password and filename) that may rule out some valid input
-- used System.in to read inputs, which utilizes File Input Stream that has associated vulnerabilities
+-had to set length restrictions on some inputs (like password and filename) that may rule out some valid input
+-used System.in to read inputs, which utilizes File Input Stream that has associated vulnerabilities
 
 Protections:
 -all variables and non-main methods private
@@ -319,7 +339,8 @@ Also checks that entered integer is not greater than max integer value or less t
 checks that file exists and can be read from in the case of the input file, and written to in the case of the output file.
 -sequence '\0' in password, and passwords of length 0
 -add salt to password for extra security layer, used secure random for cryptographically strong rng
+-salts and hashes second password to compare it to the hash of the first, which we retrieve from the file
 -compare passwords a character at a time, so the comparison fails as soon as the passwords start to differ (to protect against malicious second password)
--checks that password file does not already exist before creating it
+-checks that password and error files don't already exist before creating them
 -use big int to store result of integer addition and multiplication to ensure it is large enough to contain it
  */
